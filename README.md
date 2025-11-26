@@ -58,3 +58,30 @@ citations.md — source referencing
 feedback.md — user feedback plan
 
 deliverables.md — final submission list
+## 📊 Evaluation Results
+
+This system was evaluated on 10 domain-specific questions about Transformer architecture from the "Attention Is All You Need" paper.
+
+### Performance Summary (Mistral-7B)
+
+| Metric | Value |
+|--------|-------|
+| Average Accuracy | 4.4/5.0 |
+| Average Completeness | 4.5/5.0 |
+| Average Clarity | 4.5/5.0 |
+| **Overall Score** | **4.5/5.0** |
+| Average Response Time | 4.3 minutes |
+
+### Key Findings
+
+1. **Zero Hallucination**: Model demonstrated exceptional factual grounding
+2. **Epistemic Humility**: Explicitly acknowledged when context was insufficient
+3. **Strong Citation Behavior**: 60% of responses included source references
+4. **Retrieval-Dependent**: Performance directly correlated with retrieval quality
+5. **Consistent Performance**: 80% of questions scored 4.0 or higher
+
+### Evaluation Details
+
+See our complete paper: [Link to paper PDF]
+
+**Research Paper:** "Multi-Model RAG System Evaluation: Comparing Open-Source LLMs on Transformer Architecture Knowledge"
