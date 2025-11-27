@@ -1,86 +1,66 @@
-# app/main.py
-from __future__ import annotations
-
-import os
-import logging
-from dotenv import load_dotenv
-
-load_dotenv()
-
+"""
+Main FastAPI application for EDUrag
+"""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
-from fastapi.routing import APIRoute
-
-# --- Feature routers (must exist and expose `router = APIRouter()`) ---
-from app.api.routes_documents import router as docs_router       # /v1/upload etc.
-from app.api.routes_query import router as query_router          # /v1/query
-from app.api.routes_answer import router as answer_router        # /v1/answer
-from app.api.routes_summarize import router as summarize_router  # /v1/summarize
-
-
-
-log = logging.getLogger("app.main")
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+from app.api import (
+    routes_health,
+    routes_documents,
+    routes_query,
+    routes_answer,
+    routes_summarize,
+    routes_compare,
+    routes_quiz,      # NEW - Quiz generation
+    routes_url        # NEW - URL ingestion
 )
 
-# === App setup ===
-app = FastAPI(title="EDUrag", version="1.0.0")
+app = FastAPI(
+    title="EDUrag API", 
+    version="2.0.0",
+    description="RAG system with PDF/URL ingestion, summarization, and quiz generation"
+)
 
-# CORS (open for dev — tighten in prod)
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],     # e.g. ["http://127.0.0.1:5173"] for prod
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Root → UI
-@app.get("/", include_in_schema=False)
+# Include routers with /v1 prefix for consistency
+app.include_router(routes_health.router, prefix="/v1", tags=["Health"])
+app.include_router(routes_documents.router, prefix="/v1", tags=["Documents"])
+app.include_router(routes_query.router, prefix="/v1", tags=["Query"])
+app.include_router(routes_answer.router, prefix="/v1", tags=["Answer"])
+app.include_router(routes_summarize.router, prefix="/v1", tags=["Summarize"])
+app.include_router(routes_compare.router, prefix="/v1", tags=["Compare"])
+app.include_router(routes_quiz.router, prefix="/v1", tags=["Quiz"])        # NEW
+app.include_router(routes_url.router, prefix="/v1", tags=["URL"])          # NEW
+
+
+@app.get("/")
 def root():
-    return RedirectResponse(url="/ui")
+    """Root endpoint with API information"""
+    return {
+        "name": "EDUrag API",
+        "version": "2.0.0",
+        "description": "Retrieval-Augmented Generation with multi-source support",
+        "features": [
+            "PDF document upload and indexing",
+            "URL/website content ingestion",
+            "Hybrid retrieval (semantic + BM25)",
+            "Question answering with citations",
+            "Auto-summarization",
+            "Smart quiz generation",
+            "Multi-model comparison"
+        ],
+        "docs": "/docs",
+        "health": "/v1/health"
+    }
 
-# Health
-@app.get("/v1/health")
-def health():
-    return {"status": "healthy"}
 
-# Robust route lister (avoids "Internal Server Error" on mounts)
-@app.get("/v1/routes")
-def list_routes():
-    items = []
-    for r in app.router.routes:
-        if isinstance(r, APIRoute):
-            methods = sorted(list(r.methods or []))
-        else:
-            # Mounts / static routes etc. don't have .methods
-            methods = []
-        items.append({"path": getattr(r, "path", str(r)), "methods": methods})
-    return {"routes": items}
-
-# Mount feature routers
-app.include_router(docs_router,      prefix="/v1")
-app.include_router(query_router,     prefix="/v1")
-app.include_router(answer_router,    prefix="/v1")
-app.include_router(summarize_router, prefix="/v1")
-
-# Serve static UI (expects web/index.html, web/script.js, web/styles.css)
-app.mount("/ui", StaticFiles(directory="web", html=True), name="ui")
-
-# Startup log
-@app.on_event("startup")
-def _startup():
-    key_loaded = bool(os.getenv("OPENAI_API_KEY"))
-    model_name = os.getenv("MODEL_NAME", "gpt-4o-mini")
-    log.info("🔑 OPENAI_API_KEY loaded? %s", key_loaded)
-    log.info("🤖 MODEL_NAME: %s", model_name)
-    log.info("✅ Server startup complete.")
-
-# Optional: run directly via `python app/main.py`
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

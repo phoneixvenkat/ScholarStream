@@ -1,96 +1,132 @@
-# app/services/llm.py
 """
-Offline "LLM" stub for the RAG app.
-
-We can't reliably use OpenAI or Ollama, so:
-- chat_completion(...) builds a simple, extractive answer
-- It formats the answer into 3–6 bullet points from the retrieved context.
-
-This keeps:
-- generator.py unchanged
-- routes_answer unchanged
-- UI unchanged (still shows provider + model dropdown)
+Multi-model LLM service using Ollama
+Supports: Mistral, LLaMA3, Phi-3
 """
+import ollama
+from typing import Optional, Dict, Any
 
-from __future__ import annotations
+# Available models
+AVAILABLE_MODELS = {
+    "mistral": "mistral:latest",
+    "llama3": "llama3:latest", 
+    "phi3": "phi3:latest"
+}
 
-from typing import List, Dict
+def get_available_models():
+    """Return list of available models"""
+    return list(AVAILABLE_MODELS.keys())
 
-
-def _to_bullets(text: str, min_len: int = 20, max_points: int = 6) -> str:
+def generate_response(
+    prompt: str,
+    model_name: str = "mistral",
+    max_tokens: int = 500,
+    temperature: float = 0.7
+) -> Dict[str, Any]:
     """
-    Turn a block of text into 3–6 bullet points by splitting into sentences.
-    No AI, just simple string ops.
+    Generate response from specified LLM model
+    
+    Args:
+        prompt: The input prompt
+        model_name: One of 'mistral', 'llama3', 'phi3'
+        max_tokens: Maximum tokens to generate
+        temperature: Sampling temperature
+        
+    Returns:
+        Dict with 'response', 'model', 'success', 'error'
     """
-    # Normalize spaces
-    t = " ".join(text.split())
-    if not t:
-        return "• I don't know from the provided documents."
+    try:
+        # Validate model
+        if model_name not in AVAILABLE_MODELS:
+            return {
+                "success": False,
+                "error": f"Model '{model_name}' not available. Choose from: {list(AVAILABLE_MODELS.keys())}",
+                "model": model_name,
+                "response": None
+            }
+        
+        model_id = AVAILABLE_MODELS[model_name]
+        
+        # Generate response
+        response = ollama.generate(
+            model=model_id,
+            prompt=prompt,
+            options={
+                "num_predict": max_tokens,
+                "temperature": temperature
+            }
+        )
+        
+        return {
+            "success": True,
+            "response": response['response'],
+            "model": model_name,
+            "error": None
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "model": model_name,
+            "response": None
+        }
 
-    # Rough sentence split
-    import re
-
-    sentences = re.split(r"(?<=[\.\?\!])\s+", t)
-    # Filter very short bits & meta instruction lines
-    sentences = [
-        s.strip()
-        for s in sentences
-        if len(s.strip()) >= min_len and "Give a clear answer" not in s
-    ]
-
-    if not sentences:
-        return "• I don't know from the provided documents."
-
-    # Take up to max_points
-    sentences = sentences[:max_points]
-
-    bullets = "\n".join(f"• {s}" for s in sentences)
-    return bullets
-
-
-def chat_completion(
-    messages: List[Dict[str, str]],
-    model: str | None = None,
-) -> str:
+def generate_multi_model_responses(
+    prompt: str,
+    models: list = None,
+    max_tokens: int = 500,
+    temperature: float = 0.7
+) -> Dict[str, Any]:
     """
-    Drop-in replacement for a real LLM.
-
-    Parameters
-    ----------
-    messages : list of {"role": "system"|"user"|"assistant", "content": str}
-    model    : optional model name (ignored, but accepted for compatibility)
-
-    Returns
-    -------
-    str : bullet-point answer text
+    Generate responses from multiple models simultaneously
+    
+    Args:
+        prompt: The input prompt
+        models: List of model names (default: all available)
+        max_tokens: Maximum tokens per model
+        temperature: Sampling temperature
+        
+    Returns:
+        Dict with responses from each model
     """
+    if models is None:
+        models = list(AVAILABLE_MODELS.keys())
+    
+    results = {}
+    
+    for model in models:
+        result = generate_response(
+            prompt=prompt,
+            model_name=model,
+            max_tokens=max_tokens,
+            temperature=temperature
+        )
+        results[model] = result
+    
+    return {
+        "prompt": prompt,
+        "models_used": models,
+        "responses": results
+    }
 
-    # Concatenate all messages into one "prompt"
-    parts: List[str] = []
-    for m in messages:
-        role = m.get("role", "user")
-        content = m.get("content", "")
-        if not content:
-            continue
-        parts.append(content)
-
-    full_prompt = "\n\n".join(parts).strip()
-    if not full_prompt:
-        return "• I don't know from the provided documents."
-
-    # Take a window near the end (likely contains context + question)
-    window_size = 1000
-    snippet = full_prompt[-window_size:] if len(full_prompt) > window_size else full_prompt
-
-    return _to_bullets(snippet)
-
-
-def embed_text(texts: List[str]) -> List[List[float]]:
-    """
-    Dummy embedding function so any legacy import doesn't crash.
-    Real embeddings are done in app/services/embeddings.py.
-    """
-    if isinstance(texts, str):
-        texts = [texts]
-    dim = 384
-    return [[0.0] * dim for _ in texts]
+def test_model_availability():
+    """Test which models are actually available in Ollama"""
+    available = []
+    unavailable = []
+    
+    for model_name, model_id in AVAILABLE_MODELS.items():
+        try:
+            # Try a minimal generation
+            ollama.generate(
+                model=model_id,
+                prompt="test",
+                options={"num_predict": 1}
+            )
+            available.append(model_name)
+        except Exception as e:
+            unavailable.append({"model": model_name, "error": str(e)})
+    
+    return {
+        "available": available,
+        "unavailable": unavailable
+    }

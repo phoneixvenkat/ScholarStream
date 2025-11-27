@@ -1,0 +1,81 @@
+﻿{
+  "benchmark_name": "Transformer Architecture RAG Evaluation",
+  "description": "15 domain-specific questions to evaluate multi-model RAG performance",
+  "questions": [
+    {
+      "id": 1,
+      "question": "What is the main problem that the Transformer model addresses compared to RNN-based models?",
+      "category": "architecture"
+    },
+    {
+      "id": 2,
+      "question": "Explain the concept of self-attention in Transformers and how it differs from traditional attention mechanisms.",
+      "category": "mechanism"
+    },
+    {
+      "id": 3,
+      "question": "What are the advantages of using multi-head attention instead of single-head attention?",
+      "category": "architecture"
+    },
+    {
+      "id": 4,
+      "question": "How does positional encoding work in Transformers and why is it necessary?",
+      "category": "mechanism"
+    },
+    {
+      "id": 5,
+      "question": "What is the purpose of layer normalization in Transformers and where is it applied?",
+      "category": "training"
+    },
+    {
+      "id": 6,
+      "question": "Describe the encoder-decoder architecture of the original Transformer model and explain their different roles.",
+      "category": "architecture"
+    },
+    {
+      "id": 7,
+      "question": "What is masked self-attention and why is it used in the decoder?",
+      "category": "mechanism"
+    },
+    {
+      "id": 8,
+      "question": "How do Transformers handle variable-length sequences and what techniques are used?",
+      "category": "implementation"
+    },
+    {
+      "id": 9,
+      "question": "What are the computational advantages of Transformers over RNNs in terms of parallelization and training efficiency?",
+      "category": "performance"
+    },
+    {
+      "id": 10,
+      "question": "What are some major applications and variants of the Transformer architecture?",
+      "category": "applications"
+    },
+    {
+      "id": 11,
+      "question": "Explain the feed-forward neural network component in each Transformer layer and its purpose.",
+      "category": "architecture"
+    },
+    {
+      "id": 12,
+      "question": "How do Transformers handle long-range dependencies and what are the computational trade-offs?",
+      "category": "mechanism"
+    },
+    {
+      "id": 13,
+      "question": "What is the role of residual connections in the Transformer architecture?",
+      "category": "architecture"
+    },
+    {
+      "id": 14,
+      "question": "Compare the attention mechanism in Transformers with traditional sequence-to-sequence models with attention.",
+      "category": "comparison"
+    },
+    {
+      "id": 15,
+      "question": "What are the key hyperparameters in Transformer models and how do they affect model performance?",
+      "category": "training"
+    }
+  ]
+}

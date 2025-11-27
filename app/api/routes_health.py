@@ -1,30 +1,46 @@
-# app/api/routes_health.py
-from __future__ import annotations
+"""
+Health check endpoints
+"""
+from fastapi import APIRouter, HTTPException
+import ollama
 
-import os
-from fastapi import APIRouter
-from pydantic import BaseModel
-from typing import Dict, Any
+router = APIRouter()
 
-from app.services.vectorstore import _collection  # type: ignore
+@router.get("/health")
+async def health_check():
+    """
+    Basic health check endpoint
+    """
+    return {
+        "status": "healthy",
+        "message": "EDUrag backend is running"
+    }
 
-router = APIRouter(prefix="/v1", tags=["health"])
-
-class HealthResp(BaseModel):
-    ok: bool
-    openai_key_loaded: bool
-    collection: str
-    count: int
-    model: str
-
-@router.get("/health", response_model=HealthResp)
-def health() -> HealthResp:
-    openai_key_loaded = bool(os.getenv("OPENAI_API_KEY"))
-    coll = _collection()
-    return HealthResp(
-        ok=True,
-        openai_key_loaded=openai_key_loaded,
-        collection=coll.name,
-        count=coll.count(),
-        model=os.getenv("MODEL_NAME", "gpt-4o-mini"),
-    )
+@router.get("/v1/health")
+async def detailed_health_check():
+    """
+    Detailed health check with system status
+    """
+    try:
+        # Check if Ollama is accessible
+        try:
+            ollama_models = ollama.list()
+            ollama_status = "connected"
+            models_count = len(ollama_models.get('models', []))
+        except Exception as e:
+            ollama_status = "disconnected"
+            models_count = 0
+        
+        return {
+            "status": "healthy",
+            "message": "EDUrag backend is running",
+            "services": {
+                "ollama": {
+                    "status": ollama_status,
+                    "models_available": models_count
+                },
+                "vectorstore": "ready"
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
