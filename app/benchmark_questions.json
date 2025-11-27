@@ -1,0 +1,66 @@
+{
+  "benchmark_name": "RAG System Evaluation",
+  "description": "10 questions to evaluate multi-model RAG performance",
+  "questions": [
+    {
+      "id": 1,
+      "question": "What is the main problem that the Transformer model addresses?",
+      "category": "architecture",
+      "expected_keywords": ["attention", "sequential", "parallelization", "RNN", "LSTM"]
+    },
+    {
+      "id": 2,
+      "question": "Explain the concept of self-attention in Transformers.",
+      "category": "mechanism",
+      "expected_keywords": ["query", "key", "value", "attention scores", "weighted sum"]
+    },
+    {
+      "id": 3,
+      "question": "What are the advantages of multi-head attention?",
+      "category": "architecture",
+      "expected_keywords": ["different representations", "parallel", "subspaces", "multiple perspectives"]
+    },
+    {
+      "id": 4,
+      "question": "How does positional encoding work in Transformers?",
+      "category": "mechanism",
+      "expected_keywords": ["sequence order", "sine", "cosine", "position", "embedding"]
+    },
+    {
+      "id": 5,
+      "question": "What is the purpose of layer normalization in Transformers?",
+      "category": "training",
+      "expected_keywords": ["stability", "normalize", "residual connections", "training"]
+    },
+    {
+      "id": 6,
+      "question": "Describe the encoder-decoder architecture of Transformers.",
+      "category": "architecture",
+      "expected_keywords": ["encoder", "decoder", "attention", "cross-attention", "stack"]
+    },
+    {
+      "id": 7,
+      "question": "What is masked self-attention and why is it used?",
+      "category": "mechanism",
+      "expected_keywords": ["decoder", "prevent", "future tokens", "autoregressive", "causal"]
+    },
+    {
+      "id": 8,
+      "question": "How does the Transformer handle variable-length sequences?",
+      "category": "implementation",
+      "expected_keywords": ["padding", "masking", "attention mask", "sequence length"]
+    },
+    {
+      "id": 9,
+      "question": "What are the computational advantages of Transformers over RNNs?",
+      "category": "performance",
+      "expected_keywords": ["parallel", "sequential dependency", "GPU", "faster training", "complexity"]
+    },
+    {
+      "id": 10,
+      "question": "What are some applications of Transformer models?",
+      "category": "applications",
+      "expected_keywords": ["translation", "BERT", "GPT", "language modeling", "NLP tasks"]
+    }
+  ]
+}

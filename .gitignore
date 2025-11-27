@@ -1,23 +1,33 @@
-﻿# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
+﻿# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Database
+chroma_db/
+
+# Python
 .venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Environment
 .env
-.env.*
-# runtime data
-uploaded_files/
-data/
-chroma/
-chroma-db/
-index/
-cache/
-outputs/
-# Streamlit/VSCode/OS
-.streamlit/secrets.toml
+.env.local
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# IDE
 .vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
 .DS_Store
 Thumbs.db
-.huggingface/
-.cache/
-.ipynb_checkpoints/
