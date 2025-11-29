@@ -1,65 +1,53 @@
-"""
-Main FastAPI application for EDUrag
-"""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import (
     routes_health,
     routes_documents,
     routes_query,
-    routes_answer,
-    routes_summarize,
-    routes_compare,
-    routes_quiz,      # NEW - Quiz generation
-    routes_url        # NEW - URL ingestion
+    routes_url,
+    routes_quiz,
+    routes_summarize
 )
 
 app = FastAPI(
-    title="EDUrag API", 
-    version="2.0.0",
-    description="RAG system with PDF/URL ingestion, summarization, and quiz generation"
+    title="EDUrag API",
+    description="Multi-Model RAG System for Document Q&A",
+    version="2.0.0"
 )
 
-# CORS
+# CORS Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include routers with /v1 prefix for consistency
-app.include_router(routes_health.router, prefix="/v1", tags=["Health"])
-app.include_router(routes_documents.router, prefix="/v1", tags=["Documents"])
-app.include_router(routes_query.router, prefix="/v1", tags=["Query"])
-app.include_router(routes_answer.router, prefix="/v1", tags=["Answer"])
-app.include_router(routes_summarize.router, prefix="/v1", tags=["Summarize"])
-app.include_router(routes_compare.router, prefix="/v1", tags=["Compare"])
-app.include_router(routes_quiz.router, prefix="/v1", tags=["Quiz"])        # NEW
-app.include_router(routes_url.router, prefix="/v1", tags=["URL"])          # NEW
+# Register all routers
+app.include_router(routes_health.router, prefix="/v1", tags=["health"])
+app.include_router(routes_documents.router, prefix="/v1", tags=["documents"])
+app.include_router(routes_query.router, prefix="/v1", tags=["query"])
+app.include_router(routes_url.router, prefix="/v1", tags=["url"])
+app.include_router(routes_quiz.router, prefix="/v1", tags=["quiz"])
+app.include_router(routes_summarize.router, prefix="/v1", tags=["summarize"])
 
-
+# Root endpoint
 @app.get("/")
-def root():
-    """Root endpoint with API information"""
+async def root():
     return {
-        "name": "EDUrag API",
+        "message": "EDUrag API - Multi-Model RAG System",
         "version": "2.0.0",
-        "description": "Retrieval-Augmented Generation with multi-source support",
-        "features": [
-            "PDF document upload and indexing",
-            "URL/website content ingestion",
-            "Hybrid retrieval (semantic + BM25)",
-            "Question answering with citations",
-            "Auto-summarization",
-            "Smart quiz generation",
-            "Multi-model comparison"
-        ],
         "docs": "/docs",
-        "health": "/v1/health"
+        "features": [
+            "PDF Document Upload & Indexing",
+            "URL Content Ingestion",
+            "Hybrid Retrieval (Semantic + BM25)",
+            "Question Answering with Phi-3",
+            "Smart Summarization (Phi-3)",
+            "Quiz Generation (Phi-3)"
+        ]
     }
-
 
 if __name__ == "__main__":
     import uvicorn

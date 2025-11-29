@@ -1,86 +1,96 @@
-"""
-API routes for question answering
-"""
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional
+from app.services.vectorstore import get_vectorstore
+from app.services.llm import get_llm
 import time
-
-from app.services.llm import generate_response
-from app.services.pipeline import vs_query
-from app.services.generator import build_rag_prompt
 
 router = APIRouter()
 
 class AnswerRequest(BaseModel):
     question: str
-    model: str = "mistral"
-    max_tokens: int = 500
-    temperature: float = 0.7
+    model: str = "phi3"
+    search_mode: str = "hybrid"
     top_k: int = 5
 
-@router.post("/v1/answer")
-async def get_answer(req: AnswerRequest):
+@router.post("/answer")
+async def answer_question(request: AnswerRequest):
     """
-    Get answer to a question using RAG
+    Generate an answer to a question using RAG
     """
     try:
         start_time = time.time()
         
-        # Step 1: Retrieve relevant chunks
-        chunks = vs_query(
-            query=req.question,
-            top_k=req.top_k,
-            mode="hybrid"
-        )
+        print(f"[Answer] Question: {request.question}")
+        print(f"[Answer] Model: {request.model}, Mode: {request.search_mode}")
         
-        if not chunks:
-            raise HTTPException(
-                status_code=404,
-                detail="No relevant context found in knowledge base"
-            )
+        # Step 1: Get vectorstore and retrieve relevant chunks
+        vectorstore = get_vectorstore()
         
-        # Step 2: Build RAG prompt
-        rag_prompt = build_rag_prompt(
-            question=req.question,
-            chunks=chunks
-        )
+        # Retrieve documents
+        docs = vectorstore.similarity_search(request.question, k=request.top_k)
         
-        # Step 3: Generate answer using specified model
-        result = generate_response(
-            prompt=rag_prompt,
-            model_name=req.model,
-            max_tokens=req.max_tokens,
-            temperature=req.temperature
-        )
+        if not docs:
+            return {
+                "answer": "I couldn't find any relevant information in the documents to answer this question.",
+                "sources": [],
+                "chunks_found": 0,
+                "elapsed_time": round(time.time() - start_time, 2)
+            }
         
-        if not result["success"]:
-            raise HTTPException(
-                status_code=500,
-                detail=f"LLM generation failed: {result['error']}"
-            )
+        # Extract text from documents
+        chunks = [doc.page_content for doc in docs]
         
-        # Step 4: Format response
+        print(f"[Answer] Retrieved {len(chunks)} chunks")
+        
+        # Step 2: Prepare context
+        context = "\n\n".join(chunks)
+        
+        # Step 3: Create prompt
+        prompt = f"""Based on the following context, answer the question accurately and concisely.
+
+Context:
+{context}
+
+Question: {request.question}
+
+Answer:"""
+        
+        # Step 4: Generate answer using LLM
+        llm = get_llm(model_name=request.model)
+        answer = llm.invoke(prompt)
+        
+        # Extract text from response
+        if hasattr(answer, 'content'):
+            answer_text = answer.content
+        elif isinstance(answer, str):
+            answer_text = answer
+        else:
+            answer_text = str(answer)
+        
+        elapsed_time = round(time.time() - start_time, 2)
+        
+        print(f"[Answer] ✓ Answer generated in {elapsed_time}s")
+        
+        # Format sources
         sources = [
             {
-                "text": chunk["text"][:200] + "...",
-                "metadata": chunk.get("metadata", {}),
-                "score": chunk.get("score", 0)
+                "content": chunk[:200] + "..." if len(chunk) > 200 else chunk,
+                "index": idx
             }
-            for chunk in chunks
+            for idx, chunk in enumerate(chunks[:3])  # Return top 3 sources
         ]
         
-        elapsed_time = time.time() - start_time
-        
         return {
-            "question": req.question,
-            "answer": result["response"],
-            "model": req.model,
+            "answer": answer_text,
             "sources": sources,
-            "elapsed_time": round(elapsed_time, 2)
+            "chunks_found": len(chunks),
+            "model": request.model,
+            "search_mode": request.search_mode,
+            "elapsed_time": elapsed_time
         }
         
-    except HTTPException:
-        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"[Answer] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error generating answer: {str(e)}")
